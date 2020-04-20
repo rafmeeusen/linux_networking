@@ -10,5 +10,5 @@ bridge                      | tbd
 ethtool                     | tbd
 ip (netns/link/address...)  | important one to remember: $ ip netns list-id (ip netns doesn't list all!)
 lsns                        | tbd
-nsenter                     | tbd
+nsenter                     | nice if already running process with specific namespace(s)
 
