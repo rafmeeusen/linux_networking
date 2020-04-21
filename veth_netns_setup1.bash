@@ -1,34 +1,67 @@
-# as root:
-ip netns add nsraf1
-ip netns add nsraf2
-ip link add vethraf1_ns type veth peer name vethraf1_host
-ip link add vethraf2_ns type veth peer name vethraf2_host
-ip link set vethraf1_ns  netns nsraf1
-ip link set vethraf2_ns  netns nsraf2
+# run/source as root
+# setup sequence for following setup
+# using network-namespaces / virtual ethernet devices
+#
+#    +-----------------+                       +-----------------+
+#    |     test_1      |                       |     test_2      |
+#    |                 |                       |                 |
+#    |  192.168.11.2   |                       |  192.168.22.2   |
+#    |     veth1x      |                       |     veth2x      |
+#    +--------+--------+                       +--------+--------+
+#             |                                         |
+#             |                                         |
+#             |                                         |
+#             |                                         |
+#             |  +-----------------------------------+  |
+#             |  |              test_x               |  |
+#             |  |                                   |  |
+#             +--+ vethx1                     vethx2 +--+
+#                | 192.168.11.1         192.168.22.2 |
+#                |                                   |
+#                +-----------------------------------+
+#
 
-# masks always confusing me, but 8 means 8 network bits and 24 host bits! I want opposite here
+# create network namespaces
+for NETNS in netns_t1 netns_t2 netns_tx; do
+    ip netns add $NETNS
+done
+
+# create virtual ethernet links between the namespaces
+ip link add veth_test1x type veth peer name veth_testx1
+ip link add veth_test2x type veth peer name veth_testx2
+ip link set veth_test1x netns netns_t1
+ip link set veth_test2x netns netns_t2
+ip link set veth_testx1 netns netns_tx
+ip link set veth_testx2 netns netns_tx
+
+# assign IP addresses to all ethernet interfaces
 MSK=24
+NET1=192.168.11
+NET2=192.168.22
+GW1=$NET1.1
+GW2=$NET2.1
+# around veth 1x-x1:
+ip netns exec netns_tx ip addr add $GW1/$MSK dev veth_testx1
+ip netns exec netns_t1 ip addr add $NET1.2/$MSK dev veth_test1x
+# around veth 2x-x2:
+ip netns exec netns_tx ip addr add $GW2/$MSK dev veth_testx2
+ip netns exec netns_t2 ip addr add $NET2.2/$MSK dev veth_test2x
 
-# 'host' side:
-ip addr add 192.168.11.1/$MSK dev vethraf1_host
-ip addr add 192.168.22.1/$MSK dev vethraf2_host
-ip link set vethraf1_host up
-ip link set vethraf2_host up
+# bring all if up, including lo
+ip netns exec netns_t1 ip link set lo up
+ip netns exec netns_t1 ip link set veth_test1x up
+ip netns exec netns_t2 ip link set lo up
+ip netns exec netns_t2 ip link set veth_test2x up
+ip netns exec netns_tx ip link set lo up
+ip netns exec netns_tx ip link set veth_testx1 up
+ip netns exec netns_tx ip link set veth_testx2 up
 
-# 'namespaces' side:
-# note: lo in netns is down; if not bringing up, cannot ping to own IP ip address in netns which is confusing, so let's bring up too
-ip netns exec nsraf1 ip addr add 192.168.11.2/$MSK dev vethraf1_ns
-ip netns exec nsraf1 ip link set lo up
-ip netns exec nsraf1 ip link set vethraf1_ns up
-ip netns exec nsraf1 ip route add default via 192.168.11.1
+# set default gateways for t1 and t2
+ip netns exec netns_t1 ip route add default via $GW1
+ip netns exec netns_t2 ip route add default via $GW2
 
-ip netns exec nsraf2 ip addr add 192.168.22.2/$MSK dev vethraf2_ns
-ip netns exec nsraf2 ip link set lo up
-ip netns exec nsraf2 ip link set vethraf2_ns up
-ip netns exec nsraf2 ip route add default via 192.168.22.2
-
-
-# to start bash shell "in" netns nsraf1, as user USER
-# ip netns exec nsraf1 bash
-# followed by: su USER, and maybe export PS1="\u@\h \w nsraf1 $ "
+echo To start bash shell "in" netns, as user USER, with prompt indicating the network namespace:
+echo ip netns exec netns_t1 bash
+echo su USER
+echo export PS1=\"\\u@\\h \\w netns_t1 $ \"
 
