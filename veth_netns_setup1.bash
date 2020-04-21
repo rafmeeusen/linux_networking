@@ -1,7 +1,7 @@
 # run/source as root
 # setup sequence for following setup
 # using network-namespaces / virtual ethernet devices
-#
+# (thank you http://asciiflow.com/)
 #    +-----------------+                       +-----------------+
 #    |     test_1      |                       |     test_2      |
 #    |                 |                       |                 |
