@@ -25,6 +25,8 @@ Understanding the chains:
 - user defined chains can be added, but they don't have this fixed location in the packet flow like input/output/forward, they are rather like functions that can be called from another rule
 
 Logging:
-- LOG target should allow to log by using this target in a rule
-- seems LOG is not mentioned in some manpages; not sure why (implementation dependent? not in all kernels??)
+- logging framework from Netfilter quite extensive
+- logging combined with network namespaces seems not trivial (disabled by default)
+- need to consider: targets LOG vs ULOG vs NFLOG vs ...
+- need to look into: /proc/sys/net/netfilter/nf_log/
 
