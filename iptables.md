@@ -27,6 +27,6 @@ Understanding the chains:
 Logging:
 - logging framework from Netfilter quite extensive
 - logging combined with network namespaces seems not trivial (disabled by default)
-- need to consider: targets LOG vs ULOG vs NFLOG vs ...
+- need to consider: targets LOG vs ULOG vs NFLOG vs TRACE vs ...
 - need to look into: /proc/sys/net/netfilter/nf_log/
-
+- since kernel 4.11: nf_log_all_netns
